@@ -83,7 +83,7 @@
       Install-UiPathOrchestrator.ps1 -orchestratorversion "21.4.1" -passphrase "M1cr0s0ft" -databaseservername "db.rpauniverse.com" -databasename "uipath" -databaseusername "sqlserver" -databaseuserpassword "M1cr0s0ft" -orchestratoradminpassword "M1cr0s0ft" -identityServerdbname "uipath" -identitydbserverName "db.rpauniverse.com" -identityserverauthenticationMode "SQL" -identityserverdbuser "sqlserver" -identityserverdbpassword "M1cr0s0ft" -certificatednsnames "aicenter.rpauniverse.com,orchestrator.rpauniverse.com,db.rpauniverse.com"
  #>
 #>
-[CmdletBinding()]
+    [CmdletBinding()]
 
 param(
 
@@ -239,29 +239,29 @@ function Main {
     if (!$orchestratorHostname) { $orchestratorHostname = $env:COMPUTERNAME }
 
     $features = @(
-        'IIS-DefaultDocument',
-        'IIS-HttpErrors',
-        'IIS-StaticContent',
-        'IIS-RequestFiltering',
-        'IIS-CertProvider',
-        'IIS-IPSecurity',
-        'IIS-URLAuthorization',
-        'IIS-ApplicationInit',
-        'IIS-WindowsAuthentication',
-        'IIS-NetFxExtensibility45',
-        'IIS-ASPNET45',
-        'IIS-ISAPIExtensions',
-        'IIS-ISAPIFilter',
-        'IIS-WebSockets',
-        'IIS-ManagementConsole',
-        'IIS-ManagementScriptingTools',
-        'ClientForNFS-Infrastructure'
+    'IIS-DefaultDocument',
+    'IIS-HttpErrors',
+    'IIS-StaticContent',
+    'IIS-RequestFiltering',
+    'IIS-CertProvider',
+    'IIS-IPSecurity',
+    'IIS-URLAuthorization',
+    'IIS-ApplicationInit',
+    'IIS-WindowsAuthentication',
+    'IIS-NetFxExtensibility45',
+    'IIS-ASPNET45',
+    'IIS-ISAPIExtensions',
+    'IIS-ISAPIFilter',
+    'IIS-WebSockets',
+    'IIS-ManagementConsole',
+    'IIS-ManagementScriptingTools',
+    'ClientForNFS-Infrastructure'
     )
 
 
     try {
 
-      Install-UiPathOrchestratorFeatures -features $features
+        Install-UiPathOrchestratorFeatures -features $features
 
     }
     catch {
@@ -278,6 +278,8 @@ function Main {
 
     # ((Invoke-WebRequest -Uri http://169.254.169.254/latest/meta-data/public-hostname -UseBasicParsing).RawContent -split "`n")[-1]
 
+    #Install .net Hosting
+    Install-DotNetHostingBundle -DotNetHostingBundlePath "$tempDirectory\dotnet-hosting-3.1.3-win.exe"
 
     #PRIMARY OR SECONDARY NODE
     $PrimaryNode = $True
@@ -356,7 +358,6 @@ function Main {
                 Write-Error $_.exception.message
                 Log-Error -LogPath $sLogFile -ErrorDesc "$($_.exception.message) installing Dotnet hosting" -ExitGracefully $True
             }
-
         }
 
         #Aded this two verifications for single node installation of 2020.10
@@ -451,20 +452,20 @@ function Main {
 
     if ($redisServerHost) {
 
-            #Write-Host "Uipath Orchestrator Primary node detected performing change on AppSettings"
-            $LBkey = @("LoadBalancer.Enabled", "LoadBalancer.UseRedis", "LoadBalancer.Redis.ConnectionString", "NuGet.Packages.ApiKey", "NuGet.Activities.ApiKey")
-            $LBvalue = @("true", "true", "$( $redisServerHost )", "$( $getEncryptionKey.nugetKey )", "$( $getEncryptionKey.nugetKey )")
+        #Write-Host "Uipath Orchestrator Primary node detected performing change on AppSettings"
+        $LBkey = @("LoadBalancer.Enabled", "LoadBalancer.UseRedis", "LoadBalancer.Redis.ConnectionString", "NuGet.Packages.ApiKey", "NuGet.Activities.ApiKey")
+        $LBvalue = @("true", "true", "$( $redisServerHost )", "$( $getEncryptionKey.nugetKey )", "$( $getEncryptionKey.nugetKey )")
 
-            for ($i = 0; $i -lt $LBkey.count; $i++) {
+        for ($i = 0; $i -lt $LBkey.count; $i++) {
 
-                Set-AppSettings -path "$orchestratorFolder" -key $LBkey[$i] -value $LBvalue[$i]
+            Set-AppSettings -path "$orchestratorFolder" -key $LBkey[$i] -value $LBvalue[$i]
 
-            }
-            SetMachineKey -webconfigPath "$orchestratorFolder\web.config" -validationKey $getEncryptionKey.Validationkey -decryptionKey $getEncryptionKey.DecryptionKey -validation "SHA1" -decryption "AES"
-            Restart-WebSitesSite -Name "UiPath*"
+        }
+        SetMachineKey -webconfigPath "$orchestratorFolder\web.config" -validationKey $getEncryptionKey.Validationkey -decryptionKey $getEncryptionKey.DecryptionKey -validation "SHA1" -decryption "AES"
+        Restart-WebSitesSite -Name "UiPath*"
     }
 
-     #set storage path
+    #set storage path
     Write-Host "Start to change storage path"
     if ($nuGetStoragePath) {
 
@@ -557,11 +558,11 @@ function Main {
 
                 # Create the body lines
                 $bodyLines = (
-                    "--$boundary",
-                    "Content-Disposition: form-data; name=`"OrchestratorLicense`"; filename=`"OrchestratorLicense.txt`"",
-                    "Content-Type: application/octet-stream$LF",
-                    $orchestratorLicenseCode,
-                    "--$boundary--"
+                "--$boundary",
+                "Content-Disposition: form-data; name=`"OrchestratorLicense`"; filename=`"OrchestratorLicense.txt`"",
+                "Content-Type: application/octet-stream$LF",
+                $orchestratorLicenseCode,
+                "--$boundary--"
                 ) -join $LF
 
                 $licenseURL = "localhost/odata/Settings/UiPath.Server.Configuration.OData.UploadLicense"
@@ -776,29 +777,29 @@ function Install-UrlRewrite {
 #>
 function Install-DotNetFramework {
 
-  param(
+    param(
 
-      [Parameter(Mandatory = $true)]
-      [string]
-      $dotNetFrameworkPath
+        [Parameter(Mandatory = $true)]
+        [string]
+        $dotNetFrameworkPath
 
-  )
+    )
 
     $installer = $dotNetFrameworkPath
 
-  $exitCode = 0
-  $argumentList = "/q /norestart"
+    $exitCode = 0
+    $argumentList = "/q /norestart"
 
-  Log-Write -LogPath $sLogFile -LineValue  "Installing .Net Framework 4.7.2"
+    Log-Write -LogPath $sLogFile -LineValue  "Installing .Net Framework 4.7.2"
 
-  $exitCode = (Start-Process -FilePath $installer -ArgumentList $argumentList -Verb RunAs -Wait).ExitCode
+    $exitCode = (Start-Process -FilePath $installer -ArgumentList $argumentList -Verb RunAs -Wait).ExitCode
 
-  if ($exitCode -ne 0) {
-      Log-Error -LogPath $sLogFile -ErrorDesc "Failed to install .Net Framework  4.7.2(Exit code: $exitCode)" -ExitGracefully $False
-  }
-  else {
-      Log-Write -LogPath $sLogFile -LineValue  ".Net Framework 4.7.2 successfully installed"
-  }
+    if ($exitCode -ne 0) {
+        Log-Error -LogPath $sLogFile -ErrorDesc "Failed to install .Net Framework  4.7.2(Exit code: $exitCode)" -ExitGracefully $False
+    }
+    else {
+        Log-Write -LogPath $sLogFile -LineValue  ".Net Framework 4.7.2 successfully installed"
+    }
 }
 
 <#
@@ -819,29 +820,29 @@ function Install-DotNetFramework {
 #>
 function Install-DotNetHostingBundle {
 
-  param(
+    param(
 
-      [Parameter(Mandatory = $true)]
-      [string]
-      $DotNetHostingBundlePath
+        [Parameter(Mandatory = $true)]
+        [string]
+        $DotNetHostingBundlePath
 
-  )
+    )
 
     $installer = $DotNetHostingBundlePath
 
-  $exitCode = 0
-  $argumentList = "OPT_NO_SHARED_CONFIG_CHECK=1 /q /norestart"
+    $exitCode = 0
+    $argumentList = "OPT_NO_SHARED_CONFIG_CHECK=1 /q /norestart"
 
-  Log-Write -LogPath $sLogFile -LineValue  "Installing ASP.NET Core Hosting Bundle"
+    Log-Write -LogPath $sLogFile -LineValue  "Installing ASP.NET Core Hosting Bundle"
 
-  $exitCode = (Start-Process -FilePath $installer -ArgumentList $argumentList -Verb RunAs -Wait).ExitCode
+    $exitCode = (Start-Process -FilePath $installer -ArgumentList $argumentList -Verb RunAs -Wait).ExitCode
 
-  if ($exitCode -ne 0) {
-      Log-Error -LogPath $sLogFile -ErrorDesc "Failed to install ASP.NET Core Hosting Bundle(Exit code: $exitCode)" -ExitGracefully $False
-  }
-  else {
-      Log-Write -LogPath $sLogFile -LineValue  "ASP.NET Core Hosting Bundle successfully installed"
-  }
+    if ($exitCode -ne 0) {
+        Log-Error -LogPath $sLogFile -ErrorDesc "Failed to install ASP.NET Core Hosting Bundle(Exit code: $exitCode)" -ExitGracefully $False
+    }
+    else {
+        Log-Write -LogPath $sLogFile -LineValue  "ASP.NET Core Hosting Bundle successfully installed"
+    }
 }
 
 <#
@@ -1022,17 +1023,17 @@ function SetMachineKey {
 #>
 function Set-AppSettings {
     param (
-        # web.config path
+    # web.config path
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [String] $path,
 
-        # Key to add/update
+    # Key to add/update
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [String] $key,
 
-        # Value
+    # Value
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [String] $value
@@ -1159,11 +1160,11 @@ function Install-UiPathOrchestratorFeatures {
             $state = (Get-WindowsOptionalFeature -FeatureName $feature -Online).State
             Log-Write -LogPath $sLogFile -LineValue "Checking for feature $feature Enabled/Disabled => $state"
             Write-Host "Checking for feature $feature Enabled/Disabled => $state"
-			if ($state -ne 'Enabled') {
-				Log-Write -LogPath $sLogFile -LineValue "Installing feature $feature"
-				Write-Host "Installing feature $feature"
-				Enable-WindowsOptionalFeature -Online -FeatureName $feature -all -NoRestart
-			}
+            if ($state -ne 'Enabled') {
+                Log-Write -LogPath $sLogFile -LineValue "Installing feature $feature"
+                Write-Host "Installing feature $feature"
+                Enable-WindowsOptionalFeature -Online -FeatureName $feature -all -NoRestart
+            }
         }
         catch {
             Log-Error -LogPath $sLogFile -ErrorDesc "$($_.exception.message) installing $($feature)" -ExitGracefully $True
