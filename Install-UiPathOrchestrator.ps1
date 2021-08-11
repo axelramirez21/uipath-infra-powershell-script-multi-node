@@ -172,7 +172,7 @@ param(
     [string[]] $certificateDnsNames,
 
     [Parameter()]
-    [string[]] $certificatePfxPassword = "password"
+    [string] $certificatePfxPassword = "password"
 
 )
 #Enable TLS12
