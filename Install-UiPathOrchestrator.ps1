@@ -69,6 +69,9 @@
     .PARAMETER certificateDnsNames
       String. Additional DNS names that will form part of the certificate. Example: $certificateDnsNames = "aicenter.rpauniverse.com", "orchestrator.rpauniverse.com","lb.rpauniverse.com"
 
+    .PARAMETER certificatePfxPassword
+      String. Certicate pfx password for export/import
+
     .INPUTS
       Parameters above.
 
@@ -81,7 +84,6 @@
       Install-UiPathOrchestrator.ps1 -orchestratorversion "20.10.8" -passphrase "M1cr0s0ft" -databaseservername "db.rpauniverse.com" -databasename "uipath" -databaseusername "sqlserver" -databaseuserpassword "Password" -orchestratoradminpassword "Password" -identityServerdbname "uipath" -identitydbserverName "db.rpauniverse.com" -identityserverauthenticationMode "SQL" -identityserverdbuser "sqlserver" -identityserverdbpassword "M1cr0s0ft" -certificatednsnames "aicenter.rpauniverse.com","orchestrator.rpauniverse.com","db.rpauniverse.com"
 
       Install-UiPathOrchestrator.ps1 -orchestratorversion "21.4.1" -passphrase "M1cr0s0ft" -databaseservername "db.rpauniverse.com" -databasename "uipath" -databaseusername "sqlserver" -databaseuserpassword "M1cr0s0ft" -orchestratoradminpassword "M1cr0s0ft" -identityServerdbname "uipath" -identitydbserverName "db.rpauniverse.com" -identityserverauthenticationMode "SQL" -identityserverdbuser "sqlserver" -identityserverdbpassword "M1cr0s0ft" -certificatednsnames "aicenter.rpauniverse.com,orchestrator.rpauniverse.com,db.rpauniverse.com"
- #>
 #>
     [CmdletBinding()]
 
@@ -167,7 +169,10 @@ param(
     [string] $identityCertificateSubject = "",
 
     [Parameter()]
-    [string[]] $certificateDnsNames
+    [string[]] $certificateDnsNames,
+
+    [Parameter()]
+    [string[]] $certificatePfxPassword = "password"
 
 )
 #Enable TLS12
@@ -293,7 +298,7 @@ function Main {
 
         #Import Security Certificate
         #Import-Certificate -FilePath $nuGetStoragePath"OrchCertificate.pfx" -CertStoreLocation "cert:\LocalMachine\Root"
-        $mypwd = ConvertTo-SecureString -String "password" -Force -AsPlainText
+        $mypwd = ConvertTo-SecureString -String $certificatePfxPassword -Force -AsPlainText
         Import-PfxCertificate -FilePath "$nuGetStoragePath\OrchCertificate.pfx" -CertStoreLocation Cert:\LocalMachine\Root -Password $mypwd
         Import-PfxCertificate -FilePath "$nuGetStoragePath\OrchCertificate.pfx" -CertStoreLocation cert:\LocalMachine\my -Password $mypwd
 
@@ -335,7 +340,7 @@ function Main {
         #SERLF SIGNED CERTIFICATE
         $cert = New-SelfSignedCertificate -DnsName $baseDnsNames -CertStoreLocation cert:\LocalMachine\My -FriendlyName "Orchestrator Self-Signed certificate" -KeySpec Signature -HashAlgorithm SHA256 -KeyExportPolicy Exportable  -NotAfter (Get-Date).AddYears(20)
         $thumbprint = $cert.Thumbprint
-        $mypwd = ConvertTo-SecureString -String "password" -Force -AsPlainText
+        $mypwd = ConvertTo-SecureString -String $certificatePfxPassword -Force -AsPlainText
         Export-PfxCertificate -Cert "cert:\LocalMachine\my\$thumbprint" -FilePath "$($tempDirectory)\OrchCertificate.pfx" -NoProperties -Password $mypwd
         Import-PfxCertificate -FilePath "$($tempDirectory)\OrchCertificate.pfx" -CertStoreLocation Cert:\LocalMachine\Root -Password $mypwd
         Copy-Item "$($tempDirectory)\OrchCertificate.pfx" -Destination $nuGetStoragePath
