@@ -472,46 +472,30 @@ function Main {
 
     #set storage path
     Write-Host "Change storage path"
-    if ($nuGetStoragePath) {
 
-        if ($orchestratorVersion -lt "19.4.1") {
+    #MINIO TEST#
+    $LBkey = "Storage.Location"
+    #$LBvalue = "$nuGetStoragePath"
+    $LBvalue = "host=minio.rpauniverse.com:9000;accessKey=AKIAIOSFODNN7EXAMPLE;secretKey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    Write-Host "Changing Uipath.Orchestrator.dll.config Storage.Location key value to $LBvalue"
+    Set-AppSettings -path "$orchestratorFolder" -key $LBkey -value $LBvalue
 
-            $LBkey = @("NuGet.Packages.Path", "NuGet.Activities.Path" )
+    $LBkey = "Storage.Type"
+    $LBvalue = "Minio"
+    Write-Host "Changing Uipath.Orchestrator.dll.config Storage.Type key value to $LBvalue"
+    Set-AppSettings -path "$orchestratorFolder" -key $LBkey -value $LBvalue
 
-            $LBvalue = @("\\$($nuGetStoragePath)", "\\$($nuGetStoragePath)\Activities")
-
-            for ($i = 0; $i -lt $LBkey.count; $i++) {
-
-                Set-AppSettings -path "$orchestratorFolder" -key $LBkey[$i] -value $LBvalue[$i]
-            }
-
-        }
-        else {
-
-            #MINIO TEST#
-            $LBkey = "Storage.Location"
-            #$LBvalue = "$nuGetStoragePath"
-            $LBvalue = "host=minio.rpauniverse.com:9000;accessKey=AKIAIOSFODNN7EXAMPLE;secretKey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-            Write-Host "Changing Uipath.Orchestrator.dll.config Storage.Location key value to $LBvalue"
-            Set-AppSettings -path "$orchestratorFolder" -key $LBkey -value $LBvalue
-
-            $LBkey = "Storage.Type"
-            $LBvalue = "Minio"
-            Write-Host "Changing Uipath.Orchestrator.dll.config Storage.Type key value to $LBvalue"
-            Set-AppSettings -path "$orchestratorFolder" -key $LBkey -value $LBvalue
-
-            if($PrimaryNode)
-            {
-                Write-Host "Orchestrator Primary Node 20.10+ detected"
-                Write-Host "Making a copy of Uipath Storage folder content to : $nuGetStoragePath"
-                Copy-NuGet-Packages -sourceFolder "$orchestratorFolder\Storage\" -destinationFolder $nuGetStoragePath
-            } else {
-                Write-Host "Orchestrator Secondary Node 20.10+ detected, no copy for UiPath Storage folder needed"
-            }
-        }
+    if($PrimaryNode)
+    {
+        Write-Host "Orchestrator Primary Node 20.10+ detected"
+        Write-Host "Making a copy of Uipath Storage folder content to : $nuGetStoragePath"
+        Copy-NuGet-Packages -sourceFolder "$orchestratorFolder\Storage\" -destinationFolder $nuGetStoragePath
+    } else {
+        Write-Host "Orchestrator Secondary Node 20.10+ detected, no copy for UiPath Storage folder needed"
     }
 
     #IIS RESET BEFORE TESTS
+    Restart-WebSitesSite -Name "UiPath*"
     Start-Process "iisreset.exe" -NoNewWindow -Wait
 
     # Remove temp directory
