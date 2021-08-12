@@ -718,8 +718,9 @@ function Copy-NuGet-Packages {
     $NameToFind = "Orchestrator"
 
     Get-ChildItem $sourceFolder -Recurse -ErrorAction SilentlyContinue | ?{ $_.PSIsContainer -and $_.Name.StartsWith($NameToFind) } | %{ $NName = $_.Name.ToLower()
-    
-    Copy-Item -Path $sourceFolder -Destination $destinationFolder$NName -Recurse
+
+    $newFolderLowerCase = New-Item -ItemType directory -Path $destinationFolder$NName
+    Copy-Item -Path $sourceFolder\* -Destination $newFolderLowerCase -Recurse
 
     }
 
