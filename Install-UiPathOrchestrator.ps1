@@ -720,7 +720,7 @@ function Copy-NuGet-Packages {
     Get-ChildItem $sourceFolder -Recurse -ErrorAction SilentlyContinue | ?{ $_.PSIsContainer -and $_.Name.StartsWith($NameToFind) } | %{ $NName = $_.Name.ToLower()
 
     $newFolderLowerCase = New-Item -ItemType directory -Path $destinationFolder$NName
-    Copy-Item -Path $sourceFolder\* -Destination $newFolderLowerCase -Recurse
+    Copy-Item -Path $sourceFolder$NName\* -Destination $newFolderLowerCase -Recurse
 
     }
 
