@@ -504,7 +504,7 @@ function Main {
             {
                 Write-Host "Orchestrator Primary Node 20.10+ detected"
                 Write-Host "Making a copy of Uipath Storage folder content to : $nuGetStoragePath"
-                Copy-NuGet-Packages -sourceFolder "$orchestratorFolder\Storage\*" -destinationFolder $nuGetStoragePath
+                Copy-NuGet-Packages -sourceFolder "$orchestratorFolder\Storage\" -destinationFolder $nuGetStoragePath
             } else {
                 Write-Host "Orchestrator Secondary Node 20.10+ detected, no copy for UiPath Storage folder needed"
             }
@@ -715,7 +715,13 @@ function Copy-NuGet-Packages {
 
     Log-Write -LogPath $sLogFile -LineValue "Migrating UiPath Storage Folder Content"
 
-    Copy-Item -Path $sourceFolder -Destination $destinationFolder -Recurse
+    $NameToFind = "Orchestrator"
+
+    Get-ChildItem $sourceFolder -Recurse -ErrorAction SilentlyContinue | ?{ $_.PSIsContainer -and $_.Name.StartsWith($NameToFind) } | %{ $NName = $_.Name.ToLower()
+    
+    Copy-Item -Path $sourceFolder -Destination $destinationFolder$NName -Recurse
+
+    }
 
 }
 
