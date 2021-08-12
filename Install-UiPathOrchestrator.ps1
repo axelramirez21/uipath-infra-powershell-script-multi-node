@@ -511,6 +511,9 @@ function Main {
         }
     }
 
+    #IIS RESET BEFORE TESTS
+    Start-Process "iisreset.exe" -NoNewWindow -Wait
+
     # Remove temp directory
     Log-Write -LogPath $sLogFile -LineValue "Removing temp directory $($tempDirectory)"
     Remove-Item $tempDirectory -Recurse -Force | Out-Null
