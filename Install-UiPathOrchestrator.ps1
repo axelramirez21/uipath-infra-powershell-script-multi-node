@@ -72,6 +72,16 @@
     .PARAMETER certificatePfxPassword
       String. Certicate pfx password for export/import
 
+    .PARAMETER storageType
+      String. Storage type you want to use, FileSystem, AWS, Azure, Minio
+
+     .PARAMETER minioAccessKey
+      String. Minio access key, either community or enterprise
+
+     .PARAMETER minioSecretKey
+      String. Minio secret key, either community or enterprise
+
+
     .INPUTS
       Parameters above.
 
@@ -172,7 +182,19 @@ param(
     [string[]] $certificateDnsNames,
 
     [Parameter()]
-    [string] $certificatePfxPassword = "password"
+    [string] $certificatePfxPassword = "password",
+
+    [Parameter()]
+    [string] $storageType = "",
+
+    [Parameter()]
+    [string] $minioServer = "",
+
+    [Parameter()]
+    [string] $minioAccessKey = "",
+
+    [Parameter()]
+    [string] $minioSecretKey = ""
 
 )
 #Enable TLS12
@@ -194,6 +216,10 @@ function Main {
     #Define TLS for Invoke-WebRequest
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+    ##########################################################################
+    ################ DOWNLOAD WINDOWS PRE-REQUISITES #########################
+    ##########################################################################
+
     try {
         Start-Transcript -Path "$sLogPath\Install-UipathOrchestrator-Transcript.ps1.txt" -Append
 
@@ -203,9 +229,9 @@ function Main {
 
         $source = @()
         $source += "https://download.uipath.com/versions/$orchestratorVersion/UiPathOrchestrator.msi"
-        $source += "https://download.microsoft.com/download/1/2/8/128E2E22-C1B9-44A4-BE2A-5859ED1D4592/rewrite_amd64_en-US.msi"
-        $source += "https://download.microsoft.com/download/6/E/4/6E48E8AB-DC00-419E-9704-06DD46E5F81D/NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
-        $source += "https://download.visualstudio.microsoft.com/download/pr/ff658e5a-c017-4a63-9ffe-e53865963848/15875eef1f0b8e25974846e4a4518135/dotnet-hosting-3.1.3-win.exe"
+        $source += "https://tam-software-bucket.s3.amazonaws.com/rewrite_amd64_en-US.msi"
+        $source += "https://tam-software-bucket.s3.amazonaws.com/ndp472-kb4054530-x86-x64-allos-enu.exe"
+        $source += "https://tam-software-bucket.s3.amazonaws.com/dotnet-hosting-3.1.3-win.exe"
         $tries = 5
         while ($tries -ge 1) {
             try {
@@ -242,6 +268,10 @@ function Main {
     }
 
     if (!$orchestratorHostname) { $orchestratorHostname = $env:COMPUTERNAME }
+
+    ##########################################################################
+    ################ INSTALL IIS FEATURES ####################################
+    ##########################################################################
 
     $features = @(
     'IIS-DefaultDocument',
@@ -286,10 +316,10 @@ function Main {
     #Install .net Hosting
     Install-DotNetHostingBundle -DotNetHostingBundlePath "$tempDirectory\dotnet-hosting-3.1.3-win.exe"
 
-    #PRIMARY OR SECONDARY NODE
+    #Check shared drive for the Json file or Certificate to determine if this is a primary or secondary instance
     $PrimaryNode = $True
     $installParamsExist = Test-Path -Path $nuGetStoragePath"installParams.json" -PathType leaf
-    $CertificateExist = Test-Path -Path $nuGetStoragePath"OrchCertificate.pfx" -PathType leaf
+    $CertificateExist   = Test-Path -Path $nuGetStoragePath"OrchCertificate.pfx" -PathType leaf
 
 
     if($installParamsExist -and $CertificateExist){
@@ -473,9 +503,12 @@ function Main {
     #set storage path
     Write-Host "Change storage path"
 
+    #ADD logic to handle different type of storage solutions
+    if($storageType -eq "Minio"){
+    }
+
     #MINIO TEST#
     $LBkey = "Storage.Location"
-    #$LBvalue = "$nuGetStoragePath"
     $LBvalue = "host=minio.rpauniverse.com:9000;accessKey=AKIAIOSFODNN7EXAMPLE;secretKey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
     Write-Host "Changing Uipath.Orchestrator.dll.config Storage.Location key value to $LBvalue"
     Set-AppSettings -path "$orchestratorFolder" -key $LBkey -value $LBvalue
